@@ -1,0 +1,89 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VSCode
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+generated_plugin_registrant.dart
+
+# Firebase and Secrets (⚠️ Add if using Firebase)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Xcode related
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.symlinks/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/DerivedData/
+ios/.flutter-plugins
+ios/.flutter-plugins-dependencies
+
+# Web-related (if using flutter web)
+web/.dart_tool/
+web/.packages
+web/build/
+
+# Windows-related (if targeting Windows)
+windows/.dart_tool/
+windows/build/
+windows/flutter/ephemeral/
+
+# macOS-related (if targeting macOS)
+macos/.dart_tool/
+macos/build/
+macos/Flutter/ephemeral/
+
+# Linux-related (if targeting Linux)
+linux/.dart_tool/
+linux/build/
+linux/flutter/ephemeral/
+
+# Fuchsia-related (rare)
+.fuchsia/
+
+# Coverage (if using code coverage tools)
+coverage/
+
+# crashlytics (if using Firebase crashlytics)
+crashlytics/
+
+# Android NDK artifacts (if using native C/C++)
+android/.cxx/
