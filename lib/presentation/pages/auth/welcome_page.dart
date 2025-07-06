@@ -73,9 +73,9 @@ class WelcomePage extends StatelessWidget {
                   duration: 600.ms,
                 ),
 
-                Text(
+                const Text(
                   AppStrings.appName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

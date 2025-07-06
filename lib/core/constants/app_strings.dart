@@ -1,7 +1,7 @@
 // lib/core/constants/app_strings.dart
 class AppStrings {
   // App General
-  static const String appName = 'WebinaTech Multistore';
+  static const String appName = 'LLP Multistore';
   static const String welcome = 'Welcome to';
   static const String welcomeSubtitle = 'Your one-stop multistore solution';
 

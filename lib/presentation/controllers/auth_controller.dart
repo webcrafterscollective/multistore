@@ -113,6 +113,11 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
     final userData = _storage.read(AppConstants.userDataKey);
     final userTypeString = _storage.read(AppConstants.userTypeKey);
 
+    print('🔍 Check Login Status:');
+    print('Token: $token');
+    print('User Data: $userData');
+    print('User Type: $userTypeString');
+
     if (token != null && userData != null && userTypeString != null) {
       isLoggedIn.value = true;
       currentUserType.value = UserType.values.firstWhere(
@@ -120,13 +125,52 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
         orElse: () => UserType.customer,
       );
 
-      // Reconstruct user profile based on type
-      if (currentUserType.value == UserType.vendor) {
-        currentUser.value = UserProfile.fromVendorJson(userData);
-      } else {
-        currentUser.value = UserProfile.fromCustomerJson(userData);
+      try {
+        // Reconstruct user profile based on type
+        if (currentUserType.value == UserType.vendor) {
+          currentUser.value = UserProfile.fromVendorJson(userData);
+        } else {
+          currentUser.value = UserProfile.fromCustomerJson(userData);
+        }
+        print('✅ User profile reconstructed successfully');
+
+        // Optionally refresh profile from server to get latest data
+        refreshProfile();
+      } catch (e) {
+        print('❌ Error reconstructing user profile: $e');
+        // Clear invalid data
+        _clearAuthData();
       }
     }
+  }
+
+  Future<void> refreshProfile() async {
+    if (currentUserType.value == null) return;
+
+    try {
+      print('🔄 Refreshing user profile from server...');
+      final response = await _authRepository.getProfile(currentUserType.value!);
+
+      if (response.isSuccess && response.data != null) {
+        currentUser.value = response.data!;
+        // Update stored user data
+        _storage.write(AppConstants.userDataKey, response.data!.toJson());
+        print('✅ Profile refreshed successfully');
+      } else {
+        print('⚠️ Failed to refresh profile: ${response.message}');
+      }
+    } catch (e) {
+      print('❌ Error refreshing profile: $e');
+    }
+  }
+
+  void _clearAuthData() {
+    _apiClient.clearToken();
+    _storage.remove(AppConstants.userDataKey);
+    _storage.remove(AppConstants.userTypeKey);
+    isLoggedIn.value = false;
+    currentUser.value = null;
+    currentUserType.value = null;
   }
 
   Future<void> login(String email, String password, UserType userType) async {
@@ -142,18 +186,30 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
         userType: userType,
       );
 
+      print('🚀 Sending login request for ${userType.name}');
+
       final response = await _authRepository.login(request);
 
+      print('📨 Login response: ${response.status}');
+      print('💬 Login message: ${response.message}');
+
       if (response.isSuccess && response.data != null) {
+        final loginData = response.data!;
+
+        print('🔑 Token received: ${loginData.token}');
+        print('👤 User data: ${loginData.user.toJson()}');
+
         // Save token, user data, and user type
-        _apiClient.saveToken(response.data!.token);
-        _storage.write(AppConstants.userDataKey, response.data!.user.toJson());
+        _apiClient.saveToken(loginData.token);
+        _storage.write(AppConstants.userDataKey, loginData.user.toJson());
         _storage.write(AppConstants.userTypeKey, userType.name);
 
         // Update state
         isLoggedIn.value = true;
-        currentUser.value = response.data!.user;
+        currentUser.value = loginData.user;
         currentUserType.value = userType;
+
+        print('✅ Login state updated successfully');
 
         // Clear form
         clearForms();
@@ -167,7 +223,7 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
 
         Get.snackbar(
           'Success',
-          response.message,
+          response.message.isNotEmpty ? response.message : AppStrings.loginSuccess,
           backgroundColor: AppColors.success,
           colorText: Colors.white,
           icon: const Icon(Icons.check_circle, color: Colors.white),
@@ -176,13 +232,14 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
         errorMessage.value = response.message;
         Get.snackbar(
           'Error',
-          response.message,
+          response.message.isNotEmpty ? response.message : AppStrings.invalidCredentials,
           backgroundColor: AppColors.error,
           colorText: Colors.white,
           icon: const Icon(Icons.error, color: Colors.white),
         );
       }
     } catch (e) {
+      print('❌ Login error: $e');
       errorMessage.value = AppStrings.somethingWentWrong;
       Get.snackbar(
         'Error',
@@ -311,14 +368,7 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
       }
 
       // Clear local data
-      _apiClient.clearToken();
-      _storage.remove(AppConstants.userDataKey);
-      _storage.remove(AppConstants.userTypeKey);
-
-      // Update state
-      isLoggedIn.value = false;
-      currentUser.value = null;
-      currentUserType.value = null;
+      _clearAuthData();
 
       // Clear forms
       clearForms();

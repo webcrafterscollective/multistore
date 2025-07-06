@@ -32,20 +32,48 @@ class AuthRepositoryImpl implements AuthRepository {
         data: request.toJson(),
       );
 
-      return ApiResponse<UnifiedLoginData>(
-        status: response.data['status'] ?? 'error',
-        message: response.data['message'] ?? '',
-        data: response.data['data'] != null
-            ? UnifiedLoginData.fromJson(response.data['data'], request.userType)
-            : null,
-      );
+      print('🔍 Login API Response: ${response.data}');
+
+      if (response.data['status'] == 'success') {
+        // Create a modified response structure that includes the token
+        final modifiedResponse = Map<String, dynamic>.from(response.data);
+
+        // Extract token from the response and add it to data level
+        String? token;
+        if (response.data['data'] != null && response.data['data']['token'] != null) {
+          token = response.data['data']['token'];
+        } else if (response.data['token'] != null) {
+          token = response.data['token'];
+        }
+
+        // Ensure token is available at the data level
+        if (token != null && modifiedResponse['data'] != null) {
+          modifiedResponse['data']['token'] = token;
+        }
+
+        final loginData = UnifiedLoginData.fromJson(modifiedResponse, request.userType);
+
+        return ApiResponse<UnifiedLoginData>(
+          status: response.data['status'] ?? 'success',
+          message: response.data['message'] ?? 'Login successful',
+          data: loginData,
+        );
+      } else {
+        return ApiResponse<UnifiedLoginData>(
+          status: 'error',
+          message: response.data['message'] ?? 'Login failed',
+          error: response.data,
+        );
+      }
     } on DioException catch (e) {
+      print('❌ Login Dio Error: ${e.response?.data}');
       return ApiResponse<UnifiedLoginData>(
         status: 'error',
-        message: e.response?.data['message'] ?? 'Login failed',
+        message: e.response?.data?['message'] ?? 'Login failed',
         error: e.response?.data,
       );
     } catch (e) {
+      print('❌ Login General Error: $e');
       return ApiResponse<UnifiedLoginData>(
         status: 'error',
         message: 'An unexpected error occurred',
@@ -140,11 +168,17 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final response = await _apiClient.dio.get('/${userType.apiPath}/profile');
 
+      print('🔍 Profile API Response: ${response.data}');
+
       UserProfile? profile;
-      if (response.data['data'] != null) {
-        profile = userType == UserType.vendor
-            ? UserProfile.fromVendorJson(response.data['data'])
-            : UserProfile.fromCustomerJson(response.data['data']);
+      if (response.data['status'] == 'success' && response.data['data'] != null) {
+        if (userType == UserType.vendor) {
+          // Use the specific profile constructor for vendor profile API
+          profile = UserProfile.fromVendorProfileJson(response.data);
+        } else {
+          // Use the specific profile constructor for customer profile API
+          profile = UserProfile.fromCustomerProfileJson(response.data);
+        }
       }
 
       return ApiResponse<UserProfile>(
@@ -153,12 +187,14 @@ class AuthRepositoryImpl implements AuthRepository {
         data: profile,
       );
     } on DioException catch (e) {
+      print('❌ Profile Dio Error: ${e.response?.data}');
       return ApiResponse<UserProfile>(
         status: 'error',
         message: e.response?.data['message'] ?? 'Failed to get profile',
         error: e.response?.data,
       );
     } catch (e) {
+      print('❌ Profile General Error: $e');
       return ApiResponse<UserProfile>(
         status: 'error',
         message: 'An unexpected error occurred',

@@ -5,7 +5,7 @@ import '../../presentation/pages/auth/login_page.dart';
 import '../../presentation/pages/auth/vendor_register_page.dart';
 import '../../presentation/pages/auth/customer_register_page.dart';
 import '../../presentation/pages/dashboard/vendor_dashboard_page.dart';
-// import '../../presentation/pages/dashboard/customer_dashboard_page.dart';
+import '../../presentation/pages/dashboard/customer_dashboard_page.dart';
 // import '../../presentation/pages/profile/profile_page.dart';
 import '../bindings/app_binding.dart';
 import 'app_routes.dart';
@@ -42,12 +42,12 @@ class AppPages {
       binding: AppBinding(),
       transition: Transition.fadeIn,
     ),
-    // GetPage(
-    //   name: AppRoutes.customerDashboard,
-    //   page: () => const CustomerDashboardPage(),
-    //   binding: AppBinding(),
-    //   transition: Transition.fadeIn,
-    // ),
+    GetPage(
+      name: AppRoutes.customerDashboard,
+      page: () => const CustomerDashboardPage(),
+      binding: AppBinding(),
+      transition: Transition.fadeIn,
+    ),
     // GetPage(
     //   name: AppRoutes.profile,
     //   page: () => const ProfilePage(),

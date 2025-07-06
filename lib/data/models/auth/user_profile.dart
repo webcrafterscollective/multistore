@@ -28,31 +28,64 @@ class UserProfile {
     required this.updatedAt,
   });
 
-  // Fixed constructor to match your actual API response
+  // Constructor for vendor login response (different structure)
   factory UserProfile.fromVendorJson(Map<String, dynamic> json) {
     // Handle the case where json might be Map<dynamic, dynamic>
     final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
 
-    // Extract data from the actual API response structure
-    final data = safeJson['data'] ?? safeJson; // Handle both cases
-    final vendor = data['vendor'] ?? {};
+    // For vendor login response, the data structure is different
+    // Check if this is from login response (has data wrapper) or direct user data
+    final userData = safeJson.containsKey('data') ? safeJson['data'] : safeJson;
+    final Map<String, dynamic> userInfo = Map<String, dynamic>.from(userData);
 
     return UserProfile(
-      id: data['id'] ?? 0,
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      phone: data['phone'] ?? '',
+      id: userInfo['id'] ?? 0,
+      name: userInfo['name'] ?? '',
+      email: userInfo['email'] ?? '',
+      phone: userInfo['phone'] ?? '',
       userType: UserType.vendor,
-      vendorInfo: vendor.isNotEmpty ? VendorInfo.fromJson(vendor) : null,
-      picture: data['picture'],
-      address: data['address'],
+      vendorInfo: userInfo['vendor'] != null
+          ? VendorInfo.fromJson(userInfo['vendor'])
+          : null,
+      picture: userInfo['picture'],
+      address: userInfo['address'],
       type: 'vendor',
-      createdAt: DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(data['updated_at'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(userInfo['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(userInfo['updated_at'] ?? DateTime.now().toIso8601String()),
     );
   }
 
-  // Alternative constructor if you're passing the entire API response
+  // Constructor specifically for profile API response
+  factory UserProfile.fromVendorProfileJson(Map<String, dynamic> json) {
+    // Handle the case where json might be Map<dynamic, dynamic>
+    final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
+
+    // For profile response, data is nested under 'data' key
+    final userData = safeJson['data'];
+    if (userData == null) {
+      throw ArgumentError('Profile response does not contain data field');
+    }
+
+    final Map<String, dynamic> userInfo = Map<String, dynamic>.from(userData);
+
+    return UserProfile(
+      id: userInfo['id'] ?? 0,
+      name: userInfo['name'] ?? '',
+      email: userInfo['email'] ?? '',
+      phone: userInfo['phone'] ?? '',
+      userType: UserType.vendor,
+      vendorInfo: userInfo['vendor'] != null
+          ? VendorInfo.fromJson(userInfo['vendor'])
+          : null,
+      picture: userInfo['picture'],
+      address: userInfo['address'],
+      type: 'vendor',
+      createdAt: DateTime.parse(userInfo['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(userInfo['updated_at'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+
+  // Alternative constructor for API responses with different structure
   factory UserProfile.fromApiResponse(Map<String, dynamic> apiResponse) {
     // Handle the case where apiResponse might be Map<dynamic, dynamic>
     final Map<String, dynamic> safeResponse = Map<String, dynamic>.from(apiResponse);
@@ -63,7 +96,6 @@ class UserProfile {
     }
 
     final Map<String, dynamic> userData = Map<String, dynamic>.from(data);
-    final vendor = userData['vendor'] ?? {};
 
     return UserProfile(
       id: userData['id'] ?? 0,
@@ -71,7 +103,9 @@ class UserProfile {
       email: userData['email'] ?? '',
       phone: userData['phone'] ?? '',
       userType: UserType.vendor,
-      vendorInfo: vendor.isNotEmpty ? VendorInfo.fromJson(vendor) : null,
+      vendorInfo: userData['vendor'] != null
+          ? VendorInfo.fromJson(userData['vendor'])
+          : null,
       picture: userData['picture'],
       address: userData['address'],
       type: 'vendor',
@@ -96,6 +130,34 @@ class UserProfile {
       type: safeJson['type'],
       createdAt: DateTime.parse(safeJson['created_at'] ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(safeJson['updated_at'] ?? DateTime.now().toIso8601String()),
+    );
+  }
+
+  // Constructor specifically for customer profile API response
+  factory UserProfile.fromCustomerProfileJson(Map<String, dynamic> json) {
+    // Handle the case where json might be Map<dynamic, dynamic>
+    final Map<String, dynamic> safeJson = Map<String, dynamic>.from(json);
+
+    // For profile response, data is nested under 'data' key
+    final userData = safeJson['data'];
+    if (userData == null) {
+      throw ArgumentError('Profile response does not contain data field');
+    }
+
+    final Map<String, dynamic> userInfo = Map<String, dynamic>.from(userData);
+
+    return UserProfile(
+      id: userInfo['id'] ?? 0,
+      name: userInfo['name'] ?? '',
+      email: userInfo['email'] ?? '',
+      phone: userInfo['phone'] ?? '',
+      userType: UserType.customer,
+      vendorInfo: null,
+      picture: userInfo['picture'],
+      address: userInfo['address'],
+      type: userInfo['type'], // This will be "user" from the API response
+      createdAt: DateTime.parse(userInfo['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(userInfo['updated_at'] ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -127,27 +189,37 @@ class UserProfile {
 
 class VendorInfo {
   final int id;
+  final int adminId;
   final String vendorId;
   final String storeName;
   final String storeSlug;
   final String storeType;
   final String? logo;
-  final String address;
+  final String? banner;
+  final String? address;
   final String contactNumber;
   final String about;
+  final String? workingHours;
   final String status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   VendorInfo({
     required this.id,
+    required this.adminId,
     required this.vendorId,
     required this.storeName,
     required this.storeSlug,
     required this.storeType,
     this.logo,
-    required this.address,
+    this.banner,
+    this.address,
     required this.contactNumber,
     required this.about,
+    this.workingHours,
     required this.status,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory VendorInfo.fromJson(Map<String, dynamic> json) {
@@ -156,30 +228,40 @@ class VendorInfo {
 
     return VendorInfo(
       id: safeJson['id'] ?? 0,
+      adminId: safeJson['admin_id'] ?? 0,
       vendorId: safeJson['vendor_id'] ?? '',
       storeName: safeJson['store_name'] ?? '',
       storeSlug: safeJson['store_slug'] ?? '',
       storeType: safeJson['store_type'] ?? '',
       logo: safeJson['logo'],
-      address: safeJson['address'] ?? '',
+      banner: safeJson['banner'],
+      address: safeJson['address'],
       contactNumber: safeJson['contact_number'] ?? '',
       about: safeJson['about'] ?? '',
+      workingHours: safeJson['working_hours'],
       status: safeJson['status'] ?? '',
+      createdAt: DateTime.parse(safeJson['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(safeJson['updated_at'] ?? DateTime.now().toIso8601String()),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'admin_id': adminId,
       'vendor_id': vendorId,
       'store_name': storeName,
       'store_slug': storeSlug,
       'store_type': storeType,
       'logo': logo,
+      'banner': banner,
       'address': address,
       'contact_number': contactNumber,
       'about': about,
+      'working_hours': workingHours,
       'status': status,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

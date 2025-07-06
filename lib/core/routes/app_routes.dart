@@ -13,8 +13,8 @@ class AppRoutes {
   static const String coupons = '/coupons';
 
   static const String vendorDashboard = '/vendor-dashboard';
+  static const String customerDashboard = '/customer-dashboard';
 
   static const String customerRegister = '/customer-register';
-
   static const String vendorRegister = '/vendor-register';
 }

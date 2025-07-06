@@ -496,3 +496,80 @@ class _QuickActionCard extends StatelessWidget {
     );
   }
 }
+
+// Add this to your vendor dashboard page for testing
+class VendorProfileTestWidget extends StatelessWidget {
+  const VendorProfileTestWidget({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final authController = Get.find<AuthController>();
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Profile Debug Info',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: () => authController.refreshProfile(),
+                child: const Text('Refresh Profile'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final user = authController.currentUser.value;
+            if (user == null) {
+              return const Text('No user data available');
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ID: ${user.id}'),
+                Text('Name: ${user.name}'),
+                Text('Email: ${user.email}'),
+                Text('Phone: ${user.phone}'),
+                Text('Address: ${user.address ?? 'N/A'}'),
+                Text('Picture: ${user.picture ?? 'N/A'}'),
+                if (user.vendorInfo != null) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Vendor Info:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text('Store Name: ${user.vendorInfo!.storeName}'),
+                  Text('Store Slug: ${user.vendorInfo!.storeSlug}'),
+                  Text('Store Type: ${user.vendorInfo!.storeType}'),
+                  Text('Contact: ${user.vendorInfo!.contactNumber}'),
+                  Text('Status: ${user.vendorInfo!.status}'),
+                  Text('About: ${user.vendorInfo!.about}'),
+                  if (user.vendorInfo!.logo != null)
+                    Text('Logo: ${user.vendorInfo!.logo}'),
+                  if (user.vendorInfo!.banner != null)
+                    Text('Banner: ${user.vendorInfo!.banner}'),
+                ],
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}

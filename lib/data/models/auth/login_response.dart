@@ -5,19 +5,21 @@ import 'user_type.dart';
 class UnifiedLoginResponse {
   final String status;
   final String message;
-  final UnifiedLoginData data;
+  final UnifiedLoginData? data;
 
   UnifiedLoginResponse({
     required this.status,
-    required this.message,
-    required this.data,
+    this.message = '',
+    this.data,
   });
 
   factory UnifiedLoginResponse.fromJson(Map<String, dynamic> json, UserType userType) {
     return UnifiedLoginResponse(
-      status: json['status'] ?? '',
+      status: json['status'] ?? 'error',
       message: json['message'] ?? '',
-      data: UnifiedLoginData.fromJson(json['data'] ?? {}, userType),
+      data: json['data'] != null
+          ? UnifiedLoginData.fromJson(json, userType)
+          : null,
     );
   }
 }
@@ -32,11 +34,30 @@ class UnifiedLoginData {
   });
 
   factory UnifiedLoginData.fromJson(Map<String, dynamic> json, UserType userType) {
+    // Extract token from the response
+    String token = '';
+
+    // Handle different response structures for token
+    if (json.containsKey('token')) {
+      token = json['token'] ?? '';
+    } else if (json['data'] != null && json['data']['token'] != null) {
+      token = json['data']['token'] ?? '';
+    }
+
+    // Create user profile based on user type
+    UserProfile user;
+    if (userType == UserType.vendor) {
+      // For vendor, the user data is directly in the 'data' field
+      user = UserProfile.fromVendorJson(json);
+    } else {
+      // For customer, check if user data is nested
+      final userData = json['data']?['user'] ?? json['data'] ?? json;
+      user = UserProfile.fromCustomerJson(userData);
+    }
+
     return UnifiedLoginData(
-      user: userType == UserType.vendor
-          ? UserProfile.fromVendorJson(json)
-          : UserProfile.fromCustomerJson(json['user'] ?? {}),
-      token: json['token'] ?? '',
+      user: user,
+      token: token,
     );
   }
 }
