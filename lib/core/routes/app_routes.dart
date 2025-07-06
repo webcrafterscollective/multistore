@@ -1,6 +1,8 @@
-// lib/core/routes/app_routes.dart
+// lib/core/routes/app_routes.dart (Updated)
 class AppRoutes {
+  static const String splash = '/splash';
   static const String initial = '/';
+  static const String welcome = '/welcome';
   static const String login = '/login';
   static const String register = '/register';
   static const String home = '/home';

@@ -1,4 +1,4 @@
-// lib/core/bindings/initial_binding.dart
+// lib/core/bindings/initial_binding.dart (Complete)
 import 'package:get/get.dart';
 import 'package:multistorage_vendor_app/data/repositories/vendor_repository.dart';
 import '../../data/providers/api_client.dart';
@@ -12,14 +12,72 @@ import '../../presentation/controllers/product_controller.dart';
 import '../../presentation/controllers/category_controller.dart';
 import '../../presentation/controllers/order_controller.dart';
 import '../../presentation/controllers/customer_controller.dart';
+import '../services/app_initialization_service.dart';
+import '../services/session_management_service.dart';
+import '../services/connectivity_service.dart';
+import '../services/app_lifecycle_service.dart';
 
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    // Core dependencies
-    Get.put<ApiClient>(ApiClient(), permanent: true);
+    print('🔧 Starting dependency injection...');
 
-    // Repositories
+    // Core services - Initialize in order
+    _initializeCoreServices();
+    _initializeNetworkServices();
+    _initializeDataServices();
+    _initializeBusinessServices();
+    _initializeUIControllers();
+
+    print('✅ All dependencies initialized successfully');
+  }
+
+  void _initializeCoreServices() {
+    print('🔧 Initializing core services...');
+
+    // App initialization service
+    Get.put<AppInitializationService>(
+      AppInitializationService(),
+      permanent: true,
+    );
+
+    // App lifecycle management
+    Get.put<AppLifecycleService>(
+      AppLifecycleService(),
+      permanent: true,
+    );
+
+    // Session management
+    Get.put<SessionManagementService>(
+      SessionManagementService(),
+      permanent: true,
+    );
+
+    print('✅ Core services initialized');
+  }
+
+  void _initializeNetworkServices() {
+    print('🔧 Initializing network services...');
+
+    // Connectivity service
+    Get.put<ConnectivityService>(
+      ConnectivityService(),
+      permanent: true,
+    );
+
+    // API Client with enhanced features
+    Get.put<ApiClient>(
+      ApiClient(),
+      permanent: true,
+    );
+
+    print('✅ Network services initialized');
+  }
+
+  void _initializeDataServices() {
+    print('🔧 Initializing data services (repositories)...');
+
+    // Repositories - Data layer
     Get.lazyPut<AuthRepository>(
           () => AuthRepositoryImpl(Get.find<ApiClient>()),
       fenix: true,
@@ -50,15 +108,31 @@ class InitialBinding extends Bindings {
       fenix: true,
     );
 
-    // Controllers
-    Get.lazyPut<AuthController>(
-          () => AuthController(
+    print('✅ Data services initialized');
+  }
+
+  void _initializeBusinessServices() {
+    print('🔧 Initializing business services...');
+
+    // Add any business logic services here
+    // For example: NotificationService, AnalyticsService, etc.
+
+    print('✅ Business services initialized');
+  }
+
+  void _initializeUIControllers() {
+    print('🔧 Initializing UI controllers...');
+
+    // Auth Controller - Critical for middleware, initialize immediately
+    Get.put<AuthController>(
+      AuthController(
         Get.find<AuthRepository>(),
         Get.find<ApiClient>(),
       ),
-      fenix: true,
+      permanent: true,
     );
 
+    // Other controllers - Lazy loaded
     Get.lazyPut<ProductController>(
           () => ProductController(Get.find<ProductRepository>()),
       fenix: true,
@@ -78,5 +152,7 @@ class InitialBinding extends Bindings {
           () => CustomerController(Get.find<CustomerRepository>()),
       fenix: true,
     );
+
+    print('✅ UI controllers initialized');
   }
 }

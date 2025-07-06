@@ -33,6 +33,7 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
   final RxString errorMessage = ''.obs;
   final RxBool obscurePassword = true.obs;
   final RxBool obscureConfirmPassword = true.obs;
+  final RxBool isInitialized = false.obs;
 
   // Form Controllers
   final emailController = TextEditingController();
@@ -77,7 +78,8 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
       curve: Curves.easeOutCubic,
     ));
 
-    checkLoginStatus();
+    // Initialize authentication state
+    initializeAuth();
     animationController.forward();
 
     // Auto-generate store slug from store name
@@ -108,69 +110,102 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
     storeSlugController.text = slug;
   }
 
-  void checkLoginStatus() {
-    final token = _apiClient.getToken();
-    final userData = _storage.read(AppConstants.userDataKey);
-    final userTypeString = _storage.read(AppConstants.userTypeKey);
+  /// Initialize authentication state from storage
+  Future<void> initializeAuth() async {
+    try {
+      print('🔄 Initializing authentication state...');
 
-    print('🔍 Check Login Status:');
-    print('Token: $token');
-    print('User Data: $userData');
-    print('User Type: $userTypeString');
+      final token = _apiClient.getToken();
+      final userData = _storage.read(AppConstants.userDataKey);
+      final userTypeString = _storage.read(AppConstants.userTypeKey);
 
-    if (token != null && userData != null && userTypeString != null) {
-      isLoggedIn.value = true;
-      currentUserType.value = UserType.values.firstWhere(
-            (type) => type.name == userTypeString,
-        orElse: () => UserType.customer,
-      );
+      print('🔍 Init Auth - Token exists: ${token != null}');
+      print('🔍 Init Auth - User data exists: ${userData != null}');
+      print('🔍 Init Auth - User type: $userTypeString');
 
-      try {
-        // Reconstruct user profile based on type
-        if (currentUserType.value == UserType.vendor) {
-          currentUser.value = UserProfile.fromVendorJson(userData);
-        } else {
-          currentUser.value = UserProfile.fromCustomerJson(userData);
+      if (token != null && userData != null && userTypeString != null) {
+        // Restore authentication state
+        currentUserType.value = UserType.values.firstWhere(
+              (type) => type.name == userTypeString,
+          orElse: () => UserType.customer,
+        );
+
+        try {
+          // Reconstruct user profile based on type
+          if (currentUserType.value == UserType.vendor) {
+            currentUser.value = UserProfile.fromVendorJson(userData);
+          } else {
+            currentUser.value = UserProfile.fromCustomerJson(userData);
+          }
+
+          isLoggedIn.value = true;
+          print('✅ Authentication state restored successfully');
+
+          // Optionally validate token with server
+          await validateTokenWithServer();
+
+        } catch (e) {
+          print('❌ Error reconstructing user profile: $e');
+          await _clearAuthData();
         }
-        print('✅ User profile reconstructed successfully');
-
-        // Optionally refresh profile from server to get latest data
-        refreshProfile();
-      } catch (e) {
-        print('❌ Error reconstructing user profile: $e');
-        // Clear invalid data
-        _clearAuthData();
+      } else {
+        print('ℹ️ No authentication data found');
+        isLoggedIn.value = false;
       }
+    } catch (e) {
+      print('❌ Error initializing auth: $e');
+      await _clearAuthData();
+    } finally {
+      isInitialized.value = true;
     }
   }
 
-  Future<void> refreshProfile() async {
+  /// Validate current token with server
+  Future<void> validateTokenWithServer() async {
     if (currentUserType.value == null) return;
 
     try {
-      print('🔄 Refreshing user profile from server...');
+      print('🔄 Validating token with server...');
       final response = await _authRepository.getProfile(currentUserType.value!);
 
       if (response.isSuccess && response.data != null) {
         currentUser.value = response.data!;
-        // Update stored user data
+        // Update stored user data with fresh data
         _storage.write(AppConstants.userDataKey, response.data!.toJson());
-        print('✅ Profile refreshed successfully');
+        print('✅ Token validation successful');
       } else {
-        print('⚠️ Failed to refresh profile: ${response.message}');
+        print('⚠️ Token validation failed: ${response.message}');
+        // Token might be expired or invalid
+        await _clearAuthData();
+        _showTokenExpiredMessage();
       }
     } catch (e) {
-      print('❌ Error refreshing profile: $e');
+      print('❌ Error validating token: $e');
+      // Network error - keep user logged in but show warning
+      _showNetworkErrorMessage();
     }
   }
 
-  void _clearAuthData() {
+  /// Check if user is authenticated and redirect accordingly
+  void checkAuthAndRedirect() {
+    if (isLoggedIn.value && currentUserType.value != null) {
+      final dashboardRoute = currentUserType.value == UserType.vendor
+          ? '/vendor-dashboard'
+          : '/customer-dashboard';
+
+      print('🔄 Redirecting authenticated user to $dashboardRoute');
+      Get.offAllNamed(dashboardRoute);
+    }
+  }
+
+  Future<void> _clearAuthData() async {
     _apiClient.clearToken();
     _storage.remove(AppConstants.userDataKey);
     _storage.remove(AppConstants.userTypeKey);
     isLoggedIn.value = false;
     currentUser.value = null;
     currentUserType.value = null;
+    print('🗑️ Authentication data cleared');
   }
 
   Future<void> login(String email, String password, UserType userType) async {
@@ -199,7 +234,7 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
         print('🔑 Token received: ${loginData.token}');
         print('👤 User data: ${loginData.user.toJson()}');
 
-        // Save token, user data, and user type
+        // Save authentication data
         _apiClient.saveToken(loginData.token);
         _storage.write(AppConstants.userDataKey, loginData.user.toJson());
         _storage.write(AppConstants.userTypeKey, userType.name);
@@ -215,11 +250,11 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
         clearForms();
 
         // Navigate to appropriate dashboard
-        if (userType == UserType.vendor) {
-          Get.offAllNamed('/vendor-dashboard');
-        } else {
-          Get.offAllNamed('/customer-dashboard');
-        }
+        final dashboardRoute = userType == UserType.vendor
+            ? '/vendor-dashboard'
+            : '/customer-dashboard';
+
+        Get.offAllNamed(dashboardRoute);
 
         Get.snackbar(
           'Success',
@@ -253,6 +288,81 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
     }
   }
 
+  Future<void> logout() async {
+    try {
+      isLoading.value = true;
+
+      // Call logout API if user type is available
+      if (currentUserType.value != null) {
+        try {
+          await _authRepository.logout(currentUserType.value!);
+        } catch (e) {
+          print('⚠️ Logout API call failed: $e');
+          // Continue with local logout even if API fails
+        }
+      }
+
+      // Clear local data
+      await _clearAuthData();
+
+      // Clear forms
+      clearForms();
+
+      // Navigate to welcome page
+      Get.offAllNamed('/');
+
+      Get.snackbar(
+        'Success',
+        AppStrings.logoutSuccess,
+        backgroundColor: AppColors.info,
+        colorText: Colors.white,
+        icon: const Icon(Icons.logout, color: Colors.white),
+      );
+    } catch (e) {
+      print('❌ Logout error: $e');
+      Get.snackbar(
+        'Error',
+        'Logout failed',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Auto-logout when token expires
+  void handleTokenExpiry() {
+    print('🔔 Handling token expiry');
+    _clearAuthData();
+    Get.offAllNamed('/');
+    _showTokenExpiredMessage();
+  }
+
+  void _showTokenExpiredMessage() {
+    Get.snackbar(
+      'Session Expired',
+      'Your session has expired. Please login again.',
+      backgroundColor: AppColors.warning,
+      colorText: Colors.white,
+      icon: const Icon(Icons.access_time, color: Colors.white),
+      duration: const Duration(seconds: 5),
+    );
+  }
+
+  void _showNetworkErrorMessage() {
+    Get.snackbar(
+      'Network Error',
+      'Unable to verify session. Check your internet connection.',
+      backgroundColor: AppColors.error,
+      colorText: Colors.white,
+      icon: const Icon(Icons.wifi_off, color: Colors.white),
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  // Registration methods remain the same...
   Future<void> registerVendor() async {
     if (!registerFormKey.currentState!.validate()) return;
 
@@ -359,42 +469,7 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
     }
   }
 
-  Future<void> logout() async {
-    try {
-      isLoading.value = true;
-
-      if (currentUserType.value != null) {
-        await _authRepository.logout(currentUserType.value!);
-      }
-
-      // Clear local data
-      _clearAuthData();
-
-      // Clear forms
-      clearForms();
-
-      // Navigate to welcome page
-      Get.offAllNamed('/');
-      Get.snackbar(
-        'Success',
-        AppStrings.logoutSuccess,
-        backgroundColor: AppColors.info,
-        colorText: Colors.white,
-        icon: const Icon(Icons.logout, color: Colors.white),
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Logout failed',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
+  // Rest of the methods remain the same...
   void clearForms() {
     emailController.clear();
     passwordController.clear();

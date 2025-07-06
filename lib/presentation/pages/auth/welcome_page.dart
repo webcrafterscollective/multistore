@@ -1,4 +1,4 @@
-// lib/presentation/pages/auth/welcome_page.dart
+// lib/presentation/pages/auth/welcome_page.dart (Updated to handle direct access)
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -13,6 +13,13 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = Get.find<AuthController>();
+
+    // Check if user is already logged in when accessing welcome page directly
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (authController.isLoggedIn.value && authController.currentUserType.value != null) {
+        authController.checkAuthAndRedirect();
+      }
+    });
 
     return Scaffold(
       body: Container(
@@ -118,9 +125,9 @@ class WelcomePage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Text(
+                      const Text(
                         'Choose Your Role',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,

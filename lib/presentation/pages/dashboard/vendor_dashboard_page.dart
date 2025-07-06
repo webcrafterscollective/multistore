@@ -527,7 +527,7 @@ class VendorProfileTestWidget extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () => authController.refreshProfile(),
+                onPressed: () {}, //=> authController.refreshProfile(),
                 child: const Text('Refresh Profile'),
               ),
             ],
