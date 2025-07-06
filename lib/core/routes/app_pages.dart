@@ -8,6 +8,7 @@ import '../../presentation/pages/dashboard/vendor_dashboard_page.dart';
 import '../../presentation/pages/dashboard/customer_dashboard_page.dart';
 // import '../../presentation/pages/profile/profile_page.dart';
 import '../bindings/app_binding.dart';
+import '../middleware/auth_middleware.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -40,12 +41,14 @@ class AppPages {
       name: AppRoutes.vendorDashboard,
       page: () => const VendorDashboardPage(),
       binding: AppBinding(),
+      // middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: AppRoutes.customerDashboard,
       page: () => const CustomerDashboardPage(),
       binding: AppBinding(),
+      // middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),
     // GetPage(
