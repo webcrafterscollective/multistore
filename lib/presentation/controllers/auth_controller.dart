@@ -5,6 +5,7 @@ import 'package:get_storage/get_storage.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/services/session_management_service.dart';
 import '../../data/models/auth/user_type.dart';
 import '../../data/models/auth/login_request.dart';
 import '../../data/models/auth/user_profile.dart';
@@ -141,8 +142,20 @@ class AuthController extends GetxController with GetSingleTickerProviderStateMix
           isLoggedIn.value = true;
           print('✅ Authentication state restored successfully');
 
-          // Optionally validate token with server
-          await validateTokenWithServer();
+          // Start session management if available
+          try {
+            if (Get.isRegistered<SessionManagementService>()) {
+              final sessionService = Get.find<SessionManagementService>();
+              sessionService.startSession();
+            }
+          } catch (e) {
+            print('⚠️ Could not start session management: $e');
+          }
+
+          // Optionally validate token with server (but don't block initialization)
+          Future.delayed(const Duration(milliseconds: 500), () {
+            validateTokenWithServer();
+          });
 
         } catch (e) {
           print('❌ Error reconstructing user profile: $e');

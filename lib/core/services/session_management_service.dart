@@ -1,4 +1,4 @@
-// lib/core/services/session_management_service.dart
+// lib/core/services/session_management_service.dart (Fixed)
 import 'dart:async';
 import 'dart:convert';
 import 'package:get/get.dart';
@@ -21,7 +21,10 @@ class SessionManagementService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    _startSessionManagement();
+    // Defer session management start to allow other services to initialize
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _startSessionManagement();
+    });
   }
 
   @override
@@ -32,13 +35,33 @@ class SessionManagementService extends GetxService {
   }
 
   void _startSessionManagement() {
-    final apiClient = Get.find<ApiClient>();
-    final token = apiClient.getToken();
+    try {
+      // Check if ApiClient is available
+      if (!Get.isRegistered<ApiClient>()) {
+        print('⚠️ ApiClient not yet registered, deferring session management');
+        // Retry after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _startSessionManagement();
+        });
+        return;
+      }
 
-    if (token != null) {
-      _scheduleTokenRefresh();
-      _scheduleSessionTimeout();
-      print('✅ Session management started');
+      final apiClient = Get.find<ApiClient>();
+      final token = apiClient.getToken();
+
+      if (token != null) {
+        _scheduleTokenRefresh();
+        _scheduleSessionTimeout();
+        print('✅ Session management started');
+      } else {
+        print('ℹ️ No token found, session management not started');
+      }
+    } catch (e) {
+      print('❌ Error starting session management: $e');
+      // Retry after a delay if there's an error
+      Future.delayed(const Duration(seconds: 1), () {
+        _startSessionManagement();
+      });
     }
   }
 
@@ -58,6 +81,12 @@ class SessionManagementService extends GetxService {
 
   Future<void> _refreshTokenIfNeeded() async {
     try {
+      // Check if AuthController is available
+      if (!Get.isRegistered<AuthController>()) {
+        print('⚠️ AuthController not available for token refresh');
+        return;
+      }
+
       final authController = Get.find<AuthController>();
       if (authController.isLoggedIn.value && authController.currentUserType.value != null) {
         print('🔄 Refreshing session...');
@@ -71,8 +100,14 @@ class SessionManagementService extends GetxService {
 
   void _handleSessionTimeout() {
     print('⏰ Session timeout - logging out user');
-    final authController = Get.find<AuthController>();
-    authController.handleTokenExpiry();
+    try {
+      if (Get.isRegistered<AuthController>()) {
+        final authController = Get.find<AuthController>();
+        authController.handleTokenExpiry();
+      }
+    } catch (e) {
+      print('❌ Error handling session timeout: $e');
+    }
     _stopSessionManagement();
   }
 

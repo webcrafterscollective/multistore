@@ -1,4 +1,4 @@
-// lib/data/providers/api_client.dart (Enhanced)
+// lib/data/providers/api_client.dart (Enhanced with better error handling)
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -25,6 +25,11 @@ class ApiClient extends GetxService {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
+      // Configure status validation to handle server errors properly
+      validateStatus: (status) {
+        // Accept all status codes to handle them manually
+        return status != null && status < 600;
+      },
     ));
 
     // Add request/response interceptors
@@ -49,20 +54,33 @@ class ApiClient extends GetxService {
         handler.next(options);
       },
       onResponse: (response, handler) {
-        // Update session on successful authenticated requests
-        if (response.statusCode == 200 && _hasAuthToken(response.requestOptions)) {
-          _extendSession();
+        // Handle successful responses
+        if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+          // Update session on successful authenticated requests
+          if (_hasAuthToken(response.requestOptions)) {
+            _extendSession();
+          }
         }
         handler.next(response);
       },
       onError: (error, handler) {
-        // Handle authentication errors
+        // Handle authentication and authorization errors
         if (error.response?.statusCode == 401) {
           print('🚪 Unauthorized - handling token expiry');
           _handleUnauthorizedError();
         } else if (error.response?.statusCode == 403) {
           print('🚫 Forbidden - insufficient permissions');
           _handleForbiddenError();
+        } else if (error.response?.statusCode == 500) {
+          // Handle 500 errors that might be authentication related
+          final responseData = error.response?.data;
+          if (responseData is Map &&
+              (responseData['message']?.toString().toLowerCase().contains('credentials') == true ||
+                  responseData['message']?.toString().toLowerCase().contains('login') == true ||
+                  responseData['message']?.toString().toLowerCase().contains('authentication') == true)) {
+            print('🔐 Server error appears to be authentication related');
+            // Don't handle as server error, let it pass through as auth error
+          }
         }
         handler.next(error);
       },
@@ -84,12 +102,25 @@ class ApiClient extends GetxService {
         handler.next(options);
       },
       onResponse: (response, handler) {
-        print('✅ API Response: ${response.statusCode} ${response.requestOptions.path}');
+        final statusCode = response.statusCode ?? 0;
+        final statusText = _getStatusText(statusCode);
+
+        if (statusCode >= 200 && statusCode < 300) {
+          print('✅ API Response: $statusCode ${response.requestOptions.path} - $statusText');
+        } else if (statusCode >= 400 && statusCode < 500) {
+          print('⚠️ API Client Error: $statusCode ${response.requestOptions.path} - $statusText');
+        } else if (statusCode >= 500) {
+          print('❌ API Server Error: $statusCode ${response.requestOptions.path} - $statusText');
+        }
+
         print('📥 Response Data: ${_sanitizeLogData(response.data)}');
         handler.next(response);
       },
       onError: (error, handler) {
-        print('❌ API Error: ${error.response?.statusCode} ${error.requestOptions.path}');
+        final statusCode = error.response?.statusCode ?? 0;
+        final statusText = _getStatusText(statusCode);
+
+        print('❌ API Error: $statusCode ${error.requestOptions.path} - $statusText');
         print('❌ Error Data: ${error.response?.data}');
         print('❌ Error Message: ${error.message}');
         handler.next(error);
@@ -100,7 +131,7 @@ class ApiClient extends GetxService {
   Interceptor _createRetryInterceptor() {
     return InterceptorsWrapper(
       onError: (error, handler) async {
-        // Retry on network errors (not auth errors)
+        // Only retry on genuine network errors, not authentication or client errors
         if (_shouldRetryRequest(error)) {
           try {
             print('🔄 Retrying request: ${error.requestOptions.path}');
@@ -117,12 +148,43 @@ class ApiClient extends GetxService {
   }
 
   bool _shouldRetryRequest(DioException error) {
-    // Only retry on network errors, not auth errors
+    // Don't retry authentication errors or client errors
+    final statusCode = error.response?.statusCode;
+    if (statusCode != null && statusCode >= 400 && statusCode < 500) {
+      return false;
+    }
+
+    // Don't retry server errors that are likely authentication-related
+    if (statusCode == 500) {
+      final responseData = error.response?.data;
+      if (responseData is Map &&
+          (responseData['message']?.toString().toLowerCase().contains('credentials') == true ||
+              responseData['message']?.toString().toLowerCase().contains('login') == true)) {
+        return false;
+      }
+    }
+
+    // Only retry on network errors and genuine server errors
     return error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.sendTimeout ||
-        (error.response?.statusCode != null &&
-            error.response!.statusCode! >= 500);
+        (statusCode != null && statusCode >= 500);
+  }
+
+  String _getStatusText(int statusCode) {
+    switch (statusCode) {
+      case 200: return 'OK';
+      case 201: return 'Created';
+      case 400: return 'Bad Request';
+      case 401: return 'Unauthorized';
+      case 403: return 'Forbidden';
+      case 404: return 'Not Found';
+      case 422: return 'Validation Error';
+      case 500: return 'Internal Server Error';
+      case 502: return 'Bad Gateway';
+      case 503: return 'Service Unavailable';
+      default: return 'Unknown Status';
+    }
   }
 
   bool _hasAuthToken(RequestOptions options) {
@@ -131,8 +193,10 @@ class ApiClient extends GetxService {
 
   void _extendSession() {
     try {
-      final sessionService = Get.find<SessionManagementService>();
-      sessionService.extendSession();
+      if (Get.isRegistered<SessionManagementService>()) {
+        final sessionService = Get.find<SessionManagementService>();
+        sessionService.extendSession();
+      }
     } catch (e) {
       // Session service might not be initialized yet
       print('⚠️ Could not extend session: $e');
@@ -215,9 +279,11 @@ class ApiClient extends GetxService {
 
     // Record login time for session management
     try {
-      final sessionService = Get.find<SessionManagementService>();
-      sessionService.recordLoginTime();
-      sessionService.startSession();
+      if (Get.isRegistered<SessionManagementService>()) {
+        final sessionService = Get.find<SessionManagementService>();
+        sessionService.recordLoginTime();
+        sessionService.startSession();
+      }
     } catch (e) {
       print('⚠️ Could not start session management: $e');
     }
@@ -229,9 +295,11 @@ class ApiClient extends GetxService {
 
     // Clear session data
     try {
-      final sessionService = Get.find<SessionManagementService>();
-      sessionService.clearLoginTime();
-      sessionService.endSession();
+      if (Get.isRegistered<SessionManagementService>()) {
+        final sessionService = Get.find<SessionManagementService>();
+        sessionService.clearLoginTime();
+        sessionService.endSession();
+      }
     } catch (e) {
       print('⚠️ Could not end session: $e');
     }

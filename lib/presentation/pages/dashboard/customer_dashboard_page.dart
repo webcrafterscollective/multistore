@@ -146,7 +146,7 @@ class CustomerDashboardPage extends StatelessWidget {
                   )),
                 ).animate().fadeIn().slideY(begin: -0.3),
 
-                // Categories Section
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
@@ -176,9 +176,11 @@ class CustomerDashboardPage extends StatelessWidget {
                       Obx(() {
                         if (vendorController.categories.isEmpty && vendorController.isLoading.value) {
                           return SizedBox(
-                            height: 100,
+                            height: 110, // Conservative height that accommodates all content
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.zero,
+                              physics: const BouncingScrollPhysics(),
                               itemCount: 4,
                               itemBuilder: (context, index) => _buildSkeletonCategory(index),
                             ),
@@ -187,9 +189,11 @@ class CustomerDashboardPage extends StatelessWidget {
 
                         if (vendorController.categories.isEmpty) {
                           return SizedBox(
-                            height: 100,
+                            height: 110, // Conservative height that accommodates all content
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.zero,
+                              physics: const BouncingScrollPhysics(),
                               itemCount: _defaultCategories.length,
                               itemBuilder: (context, index) {
                                 final category = _defaultCategories[index];
@@ -200,9 +204,11 @@ class CustomerDashboardPage extends StatelessWidget {
                         }
 
                         return SizedBox(
-                          height: 100,
+                          height: 110, // Conservative height that accommodates all content
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
+                            padding: EdgeInsets.zero,
+                            physics: const BouncingScrollPhysics(),
                             itemCount: vendorController.categories.length,
                             itemBuilder: (context, index) {
                               final category = vendorController.categories[index];
@@ -220,6 +226,167 @@ class CustomerDashboardPage extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Categories Section - Flexible Height Approach
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 20),
+                //   child: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.start,
+                //     children: [
+                //       Row(
+                //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //         children: [
+                //           const Text(
+                //             'Shop by Category',
+                //             style: TextStyle(
+                //               fontSize: 18,
+                //               fontWeight: FontWeight.bold,
+                //               color: AppColors.textPrimary,
+                //             ),
+                //           ),
+                //           Obx(() => Text(
+                //             '${vendorController.categoriesCount} categories',
+                //             style: const TextStyle(
+                //               fontSize: 12,
+                //               color: AppColors.textSecondary,
+                //             ),
+                //           )),
+                //         ],
+                //       ),
+                //       const SizedBox(height: 16),
+                //       Obx(() {
+                //         if (vendorController.categories.isEmpty && vendorController.isLoading.value) {
+                //           return Container(
+                //             constraints: const BoxConstraints(
+                //               minHeight: 100,
+                //               maxHeight: 140, // Allow flexible height
+                //             ),
+                //             child: ListView.builder(
+                //               scrollDirection: Axis.horizontal,
+                //               padding: EdgeInsets.zero,
+                //               itemCount: 4,
+                //               itemBuilder: (context, index) => _buildSkeletonCategory(index),
+                //             ),
+                //           );
+                //         }
+                //
+                //         if (vendorController.categories.isEmpty) {
+                //           return Container(
+                //             constraints: const BoxConstraints(
+                //               minHeight: 100,
+                //               maxHeight: 140, // Allow flexible height
+                //             ),
+                //             child: ListView.builder(
+                //               scrollDirection: Axis.horizontal,
+                //               padding: EdgeInsets.zero,
+                //               itemCount: _defaultCategories.length,
+                //               itemBuilder: (context, index) {
+                //                 final category = _defaultCategories[index];
+                //                 return _buildCategoryItem(category, index, vendorController);
+                //               },
+                //             ),
+                //           );
+                //         }
+                //
+                //         return Container(
+                //           constraints: const BoxConstraints(
+                //             minHeight: 100,
+                //             maxHeight: 140, // Allow flexible height
+                //           ),
+                //           child: ListView.builder(
+                //             scrollDirection: Axis.horizontal,
+                //             padding: EdgeInsets.zero,
+                //             itemCount: vendorController.categories.length,
+                //             itemBuilder: (context, index) {
+                //               final category = vendorController.categories[index];
+                //               final categoryData = {
+                //                 'name': category.name,
+                //                 'icon': _getCategoryIcon(category.name),
+                //                 'color': _getCategoryColor(index),
+                //                 'count': category.vendorCount,
+                //               };
+                //               return _buildCategoryItem(categoryData, index, vendorController);
+                //             },
+                //           ),
+                //         );
+                //       }),
+                //     ],
+                //   ),
+                // ),
+                // Categories Section
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 20),
+                //   child: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.start,
+                //     children: [
+                //       Row(
+                //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //         children: [
+                //           const Text(
+                //             'Shop by Category',
+                //             style: TextStyle(
+                //               fontSize: 18,
+                //               fontWeight: FontWeight.bold,
+                //               color: AppColors.textPrimary,
+                //             ),
+                //           ),
+                //           Obx(() => Text(
+                //             '${vendorController.categoriesCount} categories',
+                //             style: const TextStyle(
+                //               fontSize: 12,
+                //               color: AppColors.textSecondary,
+                //             ),
+                //           )),
+                //         ],
+                //       ),
+                //       const SizedBox(height: 16),
+                //
+                //       Obx(() {
+                //         if (vendorController.categories.isEmpty && vendorController.isLoading.value) {
+                //           return SizedBox(
+                //             height: 120, // Increased height to accommodate content
+                //             child: ListView.builder(
+                //               scrollDirection: Axis.horizontal,
+                //               itemCount: 4,
+                //               itemBuilder: (context, index) => _buildSkeletonCategory(index),
+                //             ),
+                //           );
+                //         }
+                //
+                //         if (vendorController.categories.isEmpty) {
+                //           return SizedBox(
+                //             height: 120, // Increased height to accommodate content
+                //             child: ListView.builder(
+                //               scrollDirection: Axis.horizontal,
+                //               itemCount: _defaultCategories.length,
+                //               itemBuilder: (context, index) {
+                //                 final category = _defaultCategories[index];
+                //                 return _buildCategoryItem(category, index, vendorController);
+                //               },
+                //             ),
+                //           );
+                //         }
+                //
+                //         return SizedBox(
+                //           height: 120, // Increased height to accommodate content
+                //           child: ListView.builder(
+                //             scrollDirection: Axis.horizontal,
+                //             itemCount: vendorController.categories.length,
+                //             itemBuilder: (context, index) {
+                //               final category = vendorController.categories[index];
+                //               final categoryData = {
+                //                 'name': category.name,
+                //                 'icon': _getCategoryIcon(category.name),
+                //                 'color': _getCategoryColor(index),
+                //                 'count': category.vendorCount,
+                //               };
+                //               return _buildCategoryItem(categoryData, index, vendorController);
+                //             },
+                //           ),
+                //         );
+                //       }),
+                //     ],
+                //   ),
+                // ),
 
                 const SizedBox(height: 30),
 
@@ -559,6 +726,8 @@ class CustomerDashboardPage extends StatelessWidget {
   }
 
   // Helper Methods
+  // Helper Methods - Final Category Item Fix
+  // Ultra-Safe Category Item - Prevents any overflow
   Widget _buildCategoryItem(Map<String, dynamic> category, int index, VendorController vendorController) {
     return Container(
       width: 80,
@@ -574,38 +743,55 @@ class CustomerDashboardPage extends StatelessWidget {
             duration: const Duration(seconds: 2),
           );
         },
-        child: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: category['color'].withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: category['color'].withOpacity(0.3),
-                  width: 1,
+        child: IntrinsicHeight( // This prevents overflow by sizing to content
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Category Icon Container
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: category['color'].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: category['color'].withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  category['icon'],
+                  color: category['color'],
+                  size: 28,
                 ),
               ),
-              child: Icon(
-                category['icon'],
-                color: category['color'],
-                size: 28,
+
+              // Spacing
+              const SizedBox(height: 6), // Reduced spacing
+
+              // Category Name - with ClipRect to prevent overflow
+              ClipRect(
+                child: Container(
+                  constraints: const BoxConstraints(
+                    maxHeight: 32, // Maximum height for text
+                  ),
+                  child: Text(
+                    category['name'],
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      height: 1.0, // Minimal line height
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              category['name'],
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ).animate().fadeIn(delay: Duration(milliseconds: 100 * index)).slideX(begin: 0.3);
@@ -615,26 +801,53 @@ class CustomerDashboardPage extends StatelessWidget {
     return Container(
       width: 80,
       margin: const EdgeInsets.only(right: 16),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        height: 120, // Fixed container height
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Skeleton Icon
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 12,
-            width: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(6),
+
+            // Fixed spacing
+            const SizedBox(height: 8),
+
+            // Skeleton Text Area
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 10,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 10,
+                    width: 30,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ).animate().shimmer(delay: Duration(milliseconds: 100 * index));
   }

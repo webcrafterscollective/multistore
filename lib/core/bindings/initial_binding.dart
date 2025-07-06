@@ -1,4 +1,4 @@
-// lib/core/bindings/initial_binding.dart (Complete)
+// lib/core/bindings/initial_binding.dart (Fixed)
 import 'package:get/get.dart';
 import 'package:multistorage_vendor_app/data/repositories/vendor_repository.dart';
 import '../../data/providers/api_client.dart';
@@ -35,21 +35,9 @@ class InitialBinding extends Bindings {
   void _initializeCoreServices() {
     print('🔧 Initializing core services...');
 
-    // App initialization service
-    Get.put<AppInitializationService>(
-      AppInitializationService(),
-      permanent: true,
-    );
-
-    // App lifecycle management
+    // App lifecycle management - no dependencies
     Get.put<AppLifecycleService>(
       AppLifecycleService(),
-      permanent: true,
-    );
-
-    // Session management
-    Get.put<SessionManagementService>(
-      SessionManagementService(),
       permanent: true,
     );
 
@@ -59,13 +47,13 @@ class InitialBinding extends Bindings {
   void _initializeNetworkServices() {
     print('🔧 Initializing network services...');
 
-    // Connectivity service
+    // Connectivity service - no dependencies
     Get.put<ConnectivityService>(
       ConnectivityService(),
       permanent: true,
     );
 
-    // API Client with enhanced features
+    // API Client - no dependencies
     Get.put<ApiClient>(
       ApiClient(),
       permanent: true,
@@ -77,7 +65,7 @@ class InitialBinding extends Bindings {
   void _initializeDataServices() {
     print('🔧 Initializing data services (repositories)...');
 
-    // Repositories - Data layer
+    // Repositories - Data layer (depend on ApiClient)
     Get.lazyPut<AuthRepository>(
           () => AuthRepositoryImpl(Get.find<ApiClient>()),
       fenix: true,
@@ -114,8 +102,17 @@ class InitialBinding extends Bindings {
   void _initializeBusinessServices() {
     print('🔧 Initializing business services...');
 
-    // Add any business logic services here
-    // For example: NotificationService, AnalyticsService, etc.
+    // App initialization service - depends on ApiClient
+    Get.put<AppInitializationService>(
+      AppInitializationService(),
+      permanent: true,
+    );
+
+    // Session management - depends on ApiClient, initialize after ApiClient
+    Get.put<SessionManagementService>(
+      SessionManagementService(),
+      permanent: true,
+    );
 
     print('✅ Business services initialized');
   }
