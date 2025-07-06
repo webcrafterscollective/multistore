@@ -1,5 +1,6 @@
 // lib/core/bindings/initial_binding.dart
 import 'package:get/get.dart';
+import 'package:multistorage_vendor_app/data/repositories/vendor_repository.dart';
 import '../../data/providers/api_client.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/product_repository.dart';
@@ -41,6 +42,11 @@ class InitialBinding extends Bindings {
 
     Get.lazyPut<CustomerRepository>(
           () => CustomerRepositoryImpl(Get.find<ApiClient>()),
+      fenix: true,
+    );
+
+    Get.lazyPut<VendorRepository>(
+          () => VendorRepositoryImpl(Get.find<ApiClient>()),
       fenix: true,
     );
 
