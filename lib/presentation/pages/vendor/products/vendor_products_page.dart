@@ -150,7 +150,7 @@ class VendorProductsPage extends StatelessWidget {
                           onDeleted: () {
                             productController.searchProducts('');
                           },
-                          deleteIcon: const Icon(Icons.close, size: 16),
+                          deleteIcon: const Icon(Icons.close, size: 16), onSelected: (bool value) {  },
                         ),
                       const SizedBox(width: 8),
                       if (productController.queryParams.value.categoryId != null)
@@ -159,7 +159,7 @@ class VendorProductsPage extends StatelessWidget {
                           onDeleted: () {
                             productController.filterByCategory(null);
                           },
-                          deleteIcon: const Icon(Icons.close, size: 16),
+                          deleteIcon: const Icon(Icons.close, size: 16), onSelected: (bool value) {  },
                         ),
                       const SizedBox(width: 8),
                       if (productController.queryParams.value.inStock != null)
@@ -168,7 +168,7 @@ class VendorProductsPage extends StatelessWidget {
                           onDeleted: () {
                             productController.filterByStock(null);
                           },
-                          deleteIcon: const Icon(Icons.close, size: 16),
+                          deleteIcon: const Icon(Icons.close, size: 16), onSelected: (bool value) {  },
                         ),
                       const SizedBox(width: 8),
                       ActionChip(

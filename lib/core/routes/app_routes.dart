@@ -19,4 +19,8 @@ class AppRoutes {
 
   static const String customerRegister = '/customer-register';
   static const String vendorRegister = '/vendor-register';
+
+  static const String storeDetail = '/store-detail';
+
+  static const String productDetail = '/product-detail';
 }

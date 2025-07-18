@@ -1,4 +1,4 @@
-// lib/presentation/pages/customer/store/store_detail_page.dart - Part 1
+// lib/presentation/pages/customer/store/store_detail_page.dart - Complete Implementation
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -818,6 +818,208 @@ class _StoreDetailPageState extends State<StoreDetailPage> with SingleTickerProv
     );
   }
 
+  // Products Grid/List
+  Widget _buildProductsGrid() {
+    return Obx(() {
+      if (productController.isLoading.value && productController.products.isEmpty) {
+        return SliverToBoxAdapter(
+          child: Container(
+            height: 400,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        );
+      }
+
+      if (productController.products.isEmpty) {
+        return SliverToBoxAdapter(
+          child: Container(
+            height: 300,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory, size: 64, color: AppColors.textSecondary),
+                  SizedBox(height: 16),
+                  Text(
+                    'No products available',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'This store hasn\'t added any products yet',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (isGridView) {
+        return SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.75,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                final product = productController.products[index];
+                return _ProductGridCard(
+                  product: product,
+                  onTap: () => _navigateToProduct(product),
+                  onAddToCart: () => _addToCart(product),
+                );
+              },
+              childCount: productController.products.length,
+            ),
+          ),
+        );
+      } else {
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+                (context, index) {
+              final product = productController.products[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: _ProductListCard(
+                  product: product,
+                  onTap: () => _navigateToProduct(product),
+                  onAddToCart: () => _addToCart(product),
+                ),
+              );
+            },
+            childCount: productController.products.length,
+          ),
+        );
+      }
+    });
+  }
+
+  // Load More Section
+  Widget _buildLoadMoreSection() {
+    return SliverToBoxAdapter(
+      child: Obx(() {
+        if (productController.hasMorePages.value) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(
+              child: ElevatedButton(
+                onPressed: productController.isLoadingMore.value
+                    ? null
+                    : () => productController.getProducts(loadMore: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.customerPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                ),
+                child: productController.isLoadingMore.value
+                    ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                    : const Text(
+                  'Load More Products',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      }),
+    );
+  }
+
+  // Bottom Navigation Bar
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Store Info
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    vendor.storeName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star,
+                        size: 16,
+                        color: AppColors.warning,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${vendor.rating} (${vendor.reviewCount})',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        vendor.deliveryTime,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.customerPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Action Buttons
+            ElevatedButton.icon(
+              onPressed: _callStore,
+              icon: const Icon(Icons.phone, size: 18),
+              label: const Text('Call'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Helper method implementations for actions
   void _callStore() {
     Get.snackbar(
@@ -876,6 +1078,24 @@ class _StoreDetailPageState extends State<StoreDetailPage> with SingleTickerProv
       backgroundColor: AppColors.customerPrimary,
       colorText: Colors.white,
       icon: const Icon(Icons.shopping_cart, color: Colors.white),
+    );
+  }
+
+  void _navigateToProduct(ProductVariant product) {
+    Get.toNamed('/product-detail', arguments: product);
+  }
+
+  void _addToCart(ProductVariant product) {
+    setState(() {
+      cartItemCount++;
+    });
+    Get.snackbar(
+      'Added to Cart',
+      '${product.name} added to cart!',
+      backgroundColor: AppColors.success,
+      colorText: Colors.white,
+      icon: const Icon(Icons.shopping_cart, color: Colors.white),
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -942,3 +1162,418 @@ class _StoreDetailPageState extends State<StoreDetailPage> with SingleTickerProv
       ),
     );
   }
+}
+
+// Helper Widgets
+class _StoreStatItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _StoreStatItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductGridCard extends StatelessWidget {
+  final ProductVariant product;
+  final VoidCallback onTap;
+  final VoidCallback onAddToCart;
+
+  const _ProductGridCard({
+    required this.product,
+    required this.onTap,
+    required this.onAddToCart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.customerPrimary.withOpacity(0.1),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                child: Stack(
+                  children: [
+                    const Center(
+                      child: Icon(
+                        Icons.inventory,
+                        size: 40,
+                        color: AppColors.customerPrimary,
+                      ),
+                    ),
+                    // Stock badge
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: product.stock > 0 ? AppColors.success : AppColors.error,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          product.stock > 0 ? 'In Stock' : 'Out of Stock',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Product Info
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Product Name
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                    const Spacer(),
+
+                    // Price and Add to Cart
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '₹${product.price}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.customerPrimary,
+                                ),
+                              ),
+                              if (product.stock > 0)
+                                Text(
+                                  'Stock: ${product.stock}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: product.stock > 0 ? onAddToCart : null,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: product.stock > 0
+                                  ? AppColors.customerPrimary
+                                  : Colors.grey[300],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.add_shopping_cart,
+                              size: 16,
+                              color: product.stock > 0 ? Colors.white : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductListCard extends StatelessWidget {
+  final ProductVariant product;
+  final VoidCallback onTap;
+  final VoidCallback onAddToCart;
+
+  const _ProductListCard({
+    required this.product,
+    required this.onTap,
+    required this.onAddToCart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Product Image
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.customerPrimary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.inventory,
+                size: 32,
+                color: AppColors.customerPrimary,
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            // Product Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${product.product.category.name} • ${product.product.subcategory.name}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        '₹${product.price}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.customerPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: product.stock > 0 ? AppColors.success.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          product.stock > 0 ? 'In Stock (${product.stock})' : 'Out of Stock',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: product.stock > 0 ? AppColors.success : AppColors.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Add to Cart Button
+            GestureDetector(
+              onTap: product.stock > 0 ? onAddToCart : null,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: product.stock > 0
+                      ? AppColors.customerPrimary
+                      : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.add_shopping_cart,
+                  size: 20,
+                  color: product.stock > 0 ? Colors.white : Colors.grey[600],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SortOption extends StatelessWidget {
+  final String title;
+  final VoidCallback onTap;
+
+  const _SortOption({
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(title),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+    );
+  }
+}

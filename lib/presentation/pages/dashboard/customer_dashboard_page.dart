@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/vendor_controller.dart';
 import '../../widgets/common/custom_button.dart';
@@ -12,6 +13,7 @@ class CustomerDashboardPage extends StatelessWidget {
   const CustomerDashboardPage({super.key});
 
   // Default categories for fallback
+  // to avoid errors
   static const List<Map<String, dynamic>> _defaultCategories = [
     {
       'name': 'Electronics',
@@ -872,18 +874,23 @@ class CustomerDashboardPage extends StatelessWidget {
     ).animate().shimmer();
   }
 
-  void _navigateToStoreDetail(dynamic vendor) {
-    Get.snackbar(
-      'Store Selected',
-      'Opening ${vendor.storeName} store...',
-      backgroundColor: AppColors.customerPrimary,
-      colorText: Colors.white,
-      icon: const Icon(Icons.store, color: Colors.white),
-      duration: const Duration(seconds: 2),
-    );
+  // void _navigateToStoreDetail(dynamic vendor) {
+  //   Get.snackbar(
+  //     'Store Selected',
+  //     'Opening ${vendor.storeName} store...',
+  //     backgroundColor: AppColors.customerPrimary,
+  //     colorText: Colors.white,
+  //     icon: const Icon(Icons.store, color: Colors.white),
+  //     duration: const Duration(seconds: 2),
+  //   );
+  //
+  //   // TODO: Navigate to store detail page
+  //   // Get.toNamed('/store-detail', arguments: vendor);
+  // }
 
-    // TODO: Navigate to store detail page
-    // Get.toNamed('/store-detail', arguments: vendor);
+  void _navigateToStoreDetail(dynamic vendor) {
+    // Navigate to store detail page with vendor data
+    Get.toNamed(AppRoutes.storeDetail, arguments: vendor);
   }
 
   IconData _getCategoryIcon(String categoryName) {

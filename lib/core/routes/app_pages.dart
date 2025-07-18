@@ -1,5 +1,7 @@
 // lib/core/routes/app_pages.dart (Updated with splash and proper middleware)
 import 'package:get/get.dart';
+import '../../presentation/pages/customer/product/product_detail_page.dart';
+import '../../presentation/pages/customer/store/store_detail_page.dart';
 import '../../presentation/pages/splash/splash_page.dart';
 import '../../presentation/pages/auth/welcome_page.dart';
 import '../../presentation/pages/auth/login_page.dart';
@@ -101,6 +103,30 @@ class AppPages {
       page: () => const CustomerDashboardPage(),
       binding: AppBinding(),
       transition: Transition.fadeIn,
+      middlewares: [
+        TokenRefreshMiddleware(),
+        AuthMiddleware(),
+        UserTypeMiddleware(UserType.customer),
+      ],
+    ),
+
+    GetPage(
+      name: AppRoutes.storeDetail,
+      page: () => const StoreDetailPage(),
+      binding: AppBinding(),
+      transition: Transition.rightToLeft,
+      middlewares: [
+        TokenRefreshMiddleware(),
+        AuthMiddleware(),
+        UserTypeMiddleware(UserType.customer),
+      ],
+    ),
+
+    GetPage(
+      name: AppRoutes.productDetail,
+      page: () => const ProductDetailPage(),
+      binding: AppBinding(),
+      transition: Transition.rightToLeft,
       middlewares: [
         TokenRefreshMiddleware(),
         AuthMiddleware(),
